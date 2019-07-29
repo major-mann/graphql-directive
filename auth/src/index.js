@@ -6,23 +6,22 @@ const { defaultFieldResolver } = require(`graphql`);
 const { SchemaDirectiveVisitor } = require(`apollo-server`);
 
 function createAuthDirective(requestHasRole, allRole = ALL) {
-    const self = this;
     return class AuthDirective extends SchemaDirectiveVisitor {
         visitObject(object) {
             const fields = object.getFields();
-            Object.keys(fields).forEach(field => processField(fields[field]));
+            Object.keys(fields).forEach(field => processField(fields[field], this.args));
         }
         visitFieldDefinition(field) {
-            processField(field);
+            processField(field, this.args);
         }
     };
 
-    function processField(field) {
+    function processField(field, args) {
         const { resolve = defaultFieldResolver } = field;
         const hasRoles = field.roles;
         field.roles = () => ({
-            allow: self.args.allow || [],
-            deny: self.args.deny || []
+            allow: args.allow || [],
+            deny: args.deny || []
         });
 
         // We pass the field in so we can define the roles on it
