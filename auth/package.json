@@ -1,0 +1,17 @@
+{
+  "name": "@major-mann/graphql-directive-auth",
+  "version": "0.0.1",
+  "description": "A directive that allows allow and deny roles to be set\"",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "graphql",
+    "directive",
+    "authorization",
+    "role"
+  ],
+  "author": "Calvin Mann <calvinmann+npm@gmail.com>",
+  "license": "MIT"
+}
