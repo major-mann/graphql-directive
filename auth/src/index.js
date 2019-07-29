@@ -68,7 +68,7 @@ function createAuthDirective(requestHasRole, allRole = ALL) {
             }
 
             throw new Error(`Unable to authorize request. Request context does not have any ` +
-                `of the allowed roles (${roleData.join(`, `)})`);
+                `of the allowed roles (${allowedRoles.join(`, `)})`);
 
             async function hasRole(role) {
                 const has = await requestHasRole({
