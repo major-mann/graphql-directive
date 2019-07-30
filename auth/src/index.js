@@ -6,21 +6,28 @@ const { defaultFieldResolver } = require(`graphql`);
 const { SchemaDirectiveVisitor } = require(`apollo-server`);
 
 function createAuthDirective({
+    validateRole,
     authorizeRequest,
     authorizeResponse,
     allRole = ALL
 }) {
     return class AuthDirective extends SchemaDirectiveVisitor {
-        visitObject(object) {
+        async visitObject(object) {
             const fields = object.getFields();
-            Object.keys(fields).forEach(field => processField(fields[field], this.args));
+            await Promise.all(
+                Object.keys(fields).map(
+                    async field => processField(object, fields[field], this.args)
+                )
+            );
         }
-        visitFieldDefinition(field) {
-            processField(field, this.args);
+        async visitFieldDefinition(field, object) {
+            await processField(object, field, this.args);
         }
     };
 
-    function processField(field, args) {
+    async function processField(object, field, args) {
+        await validateRole({ object, field });
+
         const { resolve = defaultFieldResolver } = field;
         const hasRoles = field.roles;
         field.roles = () => ({
@@ -36,36 +43,40 @@ function createAuthDirective({
 
     function fieldAuthWrap(field, next) {
         return async function authorizedResolve(source, args, context, info) {
-            await validateRequest({ source, args, context, info });
+            await validateRequest({ source, args, context, info, field });
             const response = await next(source, args, context, info);
-            await validateResponse({ source, args, context, info, response });
+            await validateResponse({ source, args, context, info, response, field });
             return response;
         };
 
-        async function validateRequest({ source, args, context, info }) {
+        async function validateRequest({ source, args, context, info, object, field }) {
             return validate(({
                 source,
                 args,
                 context,
                 info,
+                field,
+                object,
                 type: `request`,
                 validation: authorizeRequest
             }));
         }
 
-        function validateResponse({ source, args, context, info, response }) {
+        function validateResponse({ source, args, context, info, response, object, field }) {
             return validate(({
                 source,
                 args,
                 context,
                 info,
                 response,
+                field,
+                object,
                 type: `response`,
                 validation: authorizeResponse
             }));
         }
 
-        async function validate({ type, source, args, context, info, validation, response }) {
+        async function validate({ type, source, args, context, info, validation, response, object, field }) {
             const roleData = typeof field.roles === `function` && field.roles();
 
             if (!roleData) {
@@ -108,6 +119,8 @@ function createAuthDirective({
                     role,
                     args,
                     info,
+                    field,
+                    object,
                     source,
                     context,
                     response
