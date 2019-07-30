@@ -26,11 +26,9 @@ function createAuthDirective({
     };
 
     async function processField(object, field, args) {
-
-        await Promise.all([
-            validate(args.allow, true),
-            validate(args.deny, false)
-        ]);
+        const combined = [...(args.allow || []), ...(args.deny || [])]
+            .filter((ele, idx, arr) => arr.indexOf(ele) === idx);
+        await validate(combined);
 
         const { resolve = defaultFieldResolver } = field;
         const hasRoles = field.roles;
@@ -44,14 +42,14 @@ function createAuthDirective({
             field.resolve = fieldAuthWrap(field, resolve);
         }
 
-        async function validate(roles, allow) {
+        async function validate(roles) {
             if (Array.isArray(roles)) {
                 await Promise.all(roles.map(role => validateRole({
                     object,
                     field,
                     role,
-                    allow: allow,
-                    deny: !allow
+                    allow: Boolean(args.allow && args.allow.includes(role)),
+                    deny: Boolean(args.deny && args.deny.includes(role))
                 })));
             }
         }

@@ -1,6 +1,6 @@
 {
   "name": "@major-mann/graphql-directive-auth",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "A directive that allows allow and deny roles to be set\"",
   "main": "src/index.js",
   "keywords": [
