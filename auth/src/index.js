@@ -19,7 +19,7 @@ function createAuthDirective({
             );
         }
         visitFieldDefinition(field, object) {
-            processField(object, field, this.args);
+            processField(object.objectType || object, field, this.args);
         }
     };
 
