@@ -26,7 +26,11 @@ function createAuthDirective({
     };
 
     async function processField(object, field, args) {
-        await validateRole({ object, field });
+
+        await Promise.all([
+            validate(args.allow, true),
+            validate(args.deny, false)
+        ]);
 
         const { resolve = defaultFieldResolver } = field;
         const hasRoles = field.roles;
@@ -38,6 +42,18 @@ function createAuthDirective({
         // We pass the field in so we can define the roles on it
         if (!hasRoles) {
             field.resolve = fieldAuthWrap(field, resolve);
+        }
+
+        async function validate(roles, allow) {
+            if (Array.isArray(roles)) {
+                await Promise.all(roles.map(role => validateRole({
+                    object,
+                    field,
+                    role,
+                    allow: allow,
+                    deny: !allow
+                })));
+            }
         }
     }
 
