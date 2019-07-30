@@ -12,23 +12,21 @@ function createAuthDirective({
     allRole = ALL
 }) {
     return class AuthDirective extends SchemaDirectiveVisitor {
-        async visitObject(object) {
+        visitObject(object) {
             const fields = object.getFields();
-            await Promise.all(
-                Object.keys(fields).map(
-                    async field => processField(object, fields[field], this.args)
-                )
+            Object.keys(fields).map(
+                field => processField(object, fields[field], this.args)
             );
         }
-        async visitFieldDefinition(field, object) {
-            await processField(object, field, this.args);
+        visitFieldDefinition(field, object) {
+            processField(object, field, this.args);
         }
     };
 
-    async function processField(object, field, args) {
+    function processField(object, field, args) {
         const combined = [...(args.allow || []), ...(args.deny || [])]
             .filter((ele, idx, arr) => arr.indexOf(ele) === idx);
-        await validate(combined);
+        validateRoleApplication(combined);
 
         const { resolve = defaultFieldResolver } = field;
         const hasRoles = field.roles;
@@ -42,15 +40,15 @@ function createAuthDirective({
             field.resolve = fieldAuthWrap(field, resolve);
         }
 
-        async function validate(roles) {
+        function validateRoleApplication(roles) {
             if (Array.isArray(roles)) {
-                await Promise.all(roles.map(role => validateRole({
-                    object,
-                    field,
+                roles.map(role => validateRole({
                     role,
+                    field,
+                    object,
                     allow: Boolean(args.allow && args.allow.includes(role)),
                     deny: Boolean(args.deny && args.deny.includes(role))
-                })));
+                }));
             }
         }
     }
