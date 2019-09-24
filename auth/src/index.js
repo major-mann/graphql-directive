@@ -117,11 +117,11 @@ function createAuthDirective({
                     `deny ${roleData.deny.join(`, `)}, and the request context has "${deniedRoles.join(`, `)}"`);
             }
 
-            const requiredRoles = (await Promise.all(roleData.required.map(hasRole)))
+            const requiredRoles = (await Promise.all(roleData.require.map(hasRole)))
                 .filter(role => role);
-            if (requiredRoles.length < roleData.required.length) {
+            if (requiredRoles.length < roleData.require.length) {
                 throw new Error(`Unable to authorize ${type}. Authorization has been set to ` +
-                    `require ${roleData.required.join(`, `)} roles, and the request context only ` +
+                    `require ${roleData.require.join(`, `)} roles, and the request context only ` +
                     `has "${requiredRoles.join(`, `)}"`);
             }
 
