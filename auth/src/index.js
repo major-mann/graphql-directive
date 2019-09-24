@@ -100,7 +100,7 @@ function createAuthDirective({
             if (!roleData) {
                 throw new Error(`Unable to authorize ${type}. Role data is missing from field`);
             }
-            if (!roleData.allow.length || !roleData.require.length) {
+            if (!roleData.allow.length && !roleData.require.length) {
                 throw new Error(`Unable to authorize ${type}. No allow or require role information defined, ` +
                     `therefore all are denied`);
             }
