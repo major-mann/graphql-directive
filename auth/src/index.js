@@ -24,14 +24,19 @@ function createAuthDirective({
     };
 
     function processField(object, field, args) {
-        const combined = [...(args.allow || []), ...(args.deny || [])]
-            .filter((ele, idx, arr) => arr.indexOf(ele) === idx);
+        const combined =
+            [
+                ...(args.allow || []),
+                ...(args.require || []),
+                ...(args.deny || [])
+            ].filter((ele, idx, arr) => arr.indexOf(ele) === idx);
         validateRoleApplication(combined);
 
         const { resolve = defaultFieldResolver } = field;
         const hasRoles = field.roles;
         field.roles = () => ({
             allow: args.allow || [],
+            require: args.require || [],
             deny: args.deny || []
         });
 
@@ -42,11 +47,12 @@ function createAuthDirective({
 
         function validateRoleApplication(roles) {
             if (Array.isArray(roles)) {
-                roles.map(role => validateRole({
+                roles.forEach(role => validateRole({
                     role,
                     field,
                     object,
                     allow: Boolean(args.allow && args.allow.includes(role)),
+                    require: Boolean(args.require && args.require.includes(role)),
                     deny: Boolean(args.deny && args.deny.includes(role))
                 }));
             }
@@ -94,8 +100,8 @@ function createAuthDirective({
             if (!roleData) {
                 throw new Error(`Unable to authorize ${type}. Role data is missing from field`);
             }
-            if (!roleData.allow.length) {
-                throw new Error(`Unable to authorize ${type}. No allow role information defined, ` +
+            if (!roleData.allow.length || !roleData.require.length) {
+                throw new Error(`Unable to authorize ${type}. No allow or require role information defined, ` +
                     `therefore all are denied`);
             }
 
@@ -107,8 +113,16 @@ function createAuthDirective({
                 .filter(role => role);
 
             if (deniedRoles.length) {
-                throw new Error(`Unable to authorize ${type}. Authorization has been set to deny ${allRole}, ` +
-                    `and the request context has "${deniedRoles}"`);
+                throw new Error(`Unable to authorize ${type}. Authorization has been set to ` +
+                    `deny ${roleData.deny.join(`, `)}, and the request context has "${deniedRoles.join(`, `)}"`);
+            }
+
+            const requiredRoles = (await Promise.all(roleData.required.map(hasRole)))
+                .filter(role => role);
+            if (requiredRoles.length < roleData.required.length) {
+                throw new Error(`Unable to authorize ${type}. Authorization has been set to ` +
+                    `require ${roleData.required.join(`, `)} roles, and the request context only ` +
+                    `has "${requiredRoles.join(`, `)}"`);
             }
 
             // Allow pass through if allRole is defined
