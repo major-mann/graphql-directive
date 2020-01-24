@@ -9,6 +9,10 @@
     "authorization",
     "role"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/major-mann/graphql-directive.git"
+  },
   "author": "Calvin Mann <calvinmann+npm@gmail.com>",
   "license": "MIT"
 }
